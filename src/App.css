@@ -7,11 +7,11 @@
 }
 
 :root {
-  --bg: #d8d8d8;
-  --phone: #cfcfcf;
+  --bg: rgb(170, 190, 190);
+  --phone: rgb(170, 190, 190);
   --display: #ffffff;
   --text: #2a2a2a;
-  --num: #ffffff;
+  --num: rgb(229, 237, 245);
   --unit: #f0b07a;
   --shortcut: #f3b6c8;
   --ac: #e53935;
@@ -55,13 +55,14 @@ body {
 }
 
 .phone {
-  /* Fixed portrait body; letterbox with black when viewport differs */
-  --phone-ratio: 9 / 19.5;
-  width: min(100vw, calc(100vh * 9 / 19.5));
-  height: min(100vh, calc(100vw * 19.5 / 9));
-  aspect-ratio: var(--phone-ratio);
+  /* Fixed 2:3 portrait; black letterbox fills the rest */
+  --phone-w: 2;
+  --phone-h: 3;
+  width: min(100vw, calc(100vh * var(--phone-w) / var(--phone-h)));
+  height: min(100vh, calc(100vw * var(--phone-h) / var(--phone-w)));
+  aspect-ratio: var(--phone-w) / var(--phone-h);
   display: grid;
-  grid-template-rows: minmax(0, 0.9fr) minmax(0, 1.7fr);
+  grid-template-rows: minmax(0, 0.85fr) minmax(0, 1.75fr);
   gap: 14px;
   padding: 16px 14px 18px;
   background: var(--phone);
@@ -74,7 +75,7 @@ body {
 .display {
   background: var(--display);
   border-radius: 22px;
-  padding: 18px 20px 14px;
+  padding: 16px 18px 12px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -96,7 +97,8 @@ body {
 }
 
 .display-main .sign {
-  font-size: clamp(1.85rem, 9.5vw, 3.1rem);
+  font-size: clamp(2.4rem, 12vw, 4rem);
+  font-weight: 700;
   text-align: right;
   color: var(--text);
   min-width: 0.65em;
@@ -121,18 +123,20 @@ body {
 }
 
 .display-main .num {
-  font-size: clamp(1.85rem, 9.5vw, 3.1rem);
+  font-size: clamp(2.4rem, 12vw, 4rem);
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
 }
 
 .display-main .unit {
-  font-size: clamp(0.95rem, 4.2vw, 1.35rem);
+  font-size: clamp(1.25rem, 5.5vw, 1.85rem);
   font-weight: 700;
 }
 
 .display-main .plus {
-  font-size: clamp(1.6rem, 8vw, 2.6rem);
+  font-size: clamp(2.1rem, 10vw, 3.4rem);
+  font-weight: 700;
   text-align: center;
   width: 1.05em;
   flex-shrink: 0;
@@ -141,7 +145,7 @@ body {
 .display-sub {
   margin-top: 10px;
   text-align: right;
-  font-size: clamp(1rem, 4.5vw, 1.35rem);
+  font-size: clamp(1.35rem, 5.5vw, 1.85rem);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: #444;
@@ -166,7 +170,8 @@ body {
   border-radius: var(--radius);
   font-family: inherit;
   font-weight: 700;
-  font-size: clamp(1.15rem, 5.2vw, 1.55rem);
+  /* ~1.5× previous key label size */
+  font-size: clamp(1.7rem, 7.8vw, 2.35rem);
   color: var(--text);
   cursor: pointer;
   box-shadow:
@@ -199,7 +204,7 @@ body {
 
 .key.shortcut {
   background: var(--shortcut);
-  font-size: clamp(1rem, 4.4vw, 1.3rem);
+  font-size: clamp(1.45rem, 6.4vw, 1.95rem);
 }
 
 .key.ac {
@@ -215,13 +220,13 @@ body {
 .key.op {
   background: var(--op);
   color: #fff;
-  font-size: clamp(1.5rem, 6.5vw, 2rem);
+  font-size: clamp(2.2rem, 9.5vw, 3rem);
 }
 
 .key.span-plus {
   grid-column: 2 / span 2;
   grid-row: 4 / span 2;
-  font-size: clamp(2.2rem, 10vw, 3.2rem);
+  font-size: clamp(3.2rem, 14vw, 4.6rem);
 }
 
 .key.span-eq {
@@ -229,7 +234,6 @@ body {
   grid-row: 5;
 }
 
-/* Explicit grid placement so + / = spans stay correct */
 .keypad .key:nth-child(1) {
   grid-area: 1 / 1;
 }

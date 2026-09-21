@@ -11,25 +11,19 @@ import {
 export type Op = '+' | '-'
 
 /**
- * Digit entry uses a "push" model:
- * - Last 2 digits = frames (0–23); digits to the left = seconds.
- * - Typing a digit that would make frames > 23 is rejected.
- * - After S, the current buffer becomes seconds and further digits/shortcuts
- *   only fill the frame slots.
- * - Shortcuts (6k/12k/18k) inject their digits into the frame slots.
- * - + / - / = confirm the current entry.
+ * Seconds-first entry:
+ * - Digit keys append to the seconds field (123 → 123秒＋00K).
+ * - S / K switch to frame entry (further digits fill K, 0–23).
+ * - Shortcuts (6K/12K/18K) set the frame field, keeping current seconds.
+ * - + / - / = confirm the current entry as-is (seconds + frames).
  */
 export type EntryState = {
-  /** Digits before S (or the full push buffer when S was not used). */
-  buffer: string
-  /** Set when S was pressed — seconds are locked. */
-  seconds: number | null
-  /** Frame digits after S (0–2 chars). */
-  frameBuffer: string
-  /** Explicit lock after K / =. */
+  secDigits: string
+  frameDigits: string
+  /** Where the next digit goes. */
+  phase: 'sec' | 'frame'
   locked: boolean
   lockedParts: TimeParts | null
-  /** Unary minus while composing an entry. */
   negative: boolean
 }
 
@@ -38,15 +32,14 @@ export type CalcState = {
   accumulator: number
   showSub: boolean
   justEvaluated: boolean
-  /** Operator waiting for the next operand. */
   pendingOp: Op | null
 }
 
 export function emptyEntry(negative = false): EntryState {
   return {
-    buffer: '',
-    seconds: null,
-    frameBuffer: '',
+    secDigits: '',
+    frameDigits: '',
+    phase: 'sec',
     locked: false,
     lockedParts: null,
     negative,
@@ -63,69 +56,29 @@ export function initialState(): CalcState {
   }
 }
 
-/** Parse push-buffer / S-mode into display parts (magnitude only). */
-function partsFromDigits(
-  buffer: string,
-  seconds: number | null,
-  frameBuffer: string,
-): TimeParts {
-  if (seconds !== null) {
-    const frames =
-      frameBuffer === '' ? 0 : parseInt(frameBuffer, 10)
-    return {
-      negative: false,
-      seconds: Math.min(MAX_SECONDS, Math.max(0, seconds)),
-      frames: Number.isNaN(frames) ? 0 : Math.min(FPS - 1, frames),
-    }
-  }
-
-  if (buffer === '') {
-    return ZERO_PARTS
-  }
-
-  if (buffer.length <= 2) {
-    const frames = parseInt(buffer, 10)
-    return {
-      negative: false,
-      seconds: 0,
-      frames: Number.isNaN(frames) ? 0 : frames,
-    }
-  }
-
-  const frameStr = buffer.slice(-2)
-  const secStr = buffer.slice(0, -2)
-  const frames = parseInt(frameStr, 10)
-  const secs = parseInt(secStr, 10)
-  return {
-    negative: false,
-    seconds: Number.isNaN(secs) ? 0 : Math.min(MAX_SECONDS, secs),
-    frames: Number.isNaN(frames) ? 0 : frames,
-  }
+function parseSeconds(digits: string): number {
+  if (digits === '') return 0
+  const n = parseInt(digits, 10)
+  if (Number.isNaN(n)) return 0
+  return Math.min(MAX_SECONDS, Math.max(0, n))
 }
 
-/** Would appending `digit` to the push buffer produce frames > 23? */
-function wouldRejectPushDigit(buffer: string, digit: string): boolean {
-  const next = (buffer === '0' ? '' : buffer) + digit
-  if (next.length <= 2) {
-    const frames = parseInt(next, 10)
-    return Number.isNaN(frames) || frames > FPS - 1
-  }
-  if (next.length > 6) return true // 9999 + 23
-  const frameStr = next.slice(-2)
-  const secStr = next.slice(0, -2)
-  const frames = parseInt(frameStr, 10)
-  const secs = parseInt(secStr, 10)
-  if (Number.isNaN(frames) || frames > FPS - 1) return true
-  if (Number.isNaN(secs) || secs > MAX_SECONDS) return true
-  return false
+function parseFrames(digits: string): number {
+  if (digits === '') return 0
+  const n = parseInt(digits, 10)
+  if (Number.isNaN(n)) return 0
+  return Math.min(FPS - 1, Math.max(0, n))
 }
 
 export function entryToParts(entry: EntryState): TimeParts {
   if (entry.locked && entry.lockedParts) {
     return entry.lockedParts
   }
-  const mag = partsFromDigits(entry.buffer, entry.seconds, entry.frameBuffer)
-  return { ...mag, negative: entry.negative }
+  return {
+    negative: entry.negative,
+    seconds: parseSeconds(entry.secDigits),
+    frames: parseFrames(entry.frameDigits),
+  }
 }
 
 export function entryToTotalFrames(entry: EntryState): number {
@@ -139,26 +92,23 @@ export function hasEntryInput(entry: EntryState): boolean {
     const p = entry.lockedParts
     return p.seconds !== 0 || p.frames !== 0 || p.negative
   }
-  if (entry.seconds !== null) return true
-  if (entry.negative && entry.buffer === '' && entry.frameBuffer === '') {
-    // Unary minus alone is not yet a committed value.
+  if (entry.negative && entry.secDigits === '' && entry.frameDigits === '') {
     return false
   }
-  return entry.buffer !== '' || entry.frameBuffer !== ''
+  return entry.secDigits !== '' || entry.frameDigits !== ''
 }
 
 function lockParts(parts: TimeParts): EntryState {
   return {
-    buffer: '',
-    seconds: null,
-    frameBuffer: '',
+    secDigits: '',
+    frameDigits: '',
+    phase: 'sec',
     locked: true,
     lockedParts: { ...parts },
     negative: parts.negative,
   }
 }
 
-/** After '=', a digit / unit / shortcut starts a brand-new calculation. */
 function prepareForNewEntry(state: CalcState): CalcState {
   if (!state.justEvaluated) return state
   return {
@@ -173,67 +123,64 @@ function prepareForNewEntry(state: CalcState): CalcState {
 
 function unlockIfNeeded(state: CalcState): CalcState {
   if (!state.entry.locked) return state
-  const neg = state.entry.negative
-  return { ...state, entry: emptyEntry(neg) }
-}
-
-/** Append one digit into frame slots (push model or post-S). */
-function appendFrameDigit(entry: EntryState, digit: string): EntryState | null {
-  if (entry.seconds !== null) {
-    if (entry.frameBuffer.length >= 2) return null
-    const candidate = entry.frameBuffer + digit
-    if (parseInt(candidate, 10) > FPS - 1) return null
-    return { ...entry, frameBuffer: candidate, locked: false, lockedParts: null }
-  }
-
-  if (wouldRejectPushDigit(entry.buffer, digit)) return null
-  const next = (entry.buffer === '0' ? '' : entry.buffer) + digit
-  return { ...entry, buffer: next, locked: false, lockedParts: null }
+  return { ...state, entry: emptyEntry(state.entry.negative) }
 }
 
 export function pressDigit(state: CalcState, digit: string): CalcState {
   let s = prepareForNewEntry(state)
   s = unlockIfNeeded(s)
-  const next = appendFrameDigit(s.entry, digit)
-  if (!next) return s
-  return { ...s, entry: next }
+  const entry = { ...s.entry }
+
+  if (entry.phase === 'sec') {
+    if (entry.secDigits.length >= 4) return s
+    const next =
+      entry.secDigits === '0' ? digit : entry.secDigits + digit
+    const value = parseInt(next, 10)
+    if (Number.isNaN(value) || value > MAX_SECONDS) return s
+    entry.secDigits = next
+    return { ...s, entry }
+  }
+
+  // frame phase
+  if (entry.frameDigits.length >= 2) return s
+  const candidate = entry.frameDigits + digit
+  if (parseInt(candidate, 10) > FPS - 1) return s
+  entry.frameDigits = candidate
+  return { ...s, entry }
 }
 
+/** S: keep seconds as typed, further digits go to frames. */
 export function pressS(state: CalcState): CalcState {
   let s = prepareForNewEntry(state)
   s = unlockIfNeeded(s)
-
-  if (s.entry.seconds !== null) return s
-
-  // Digits typed so far become seconds; further digits fill frames.
-  const sec =
-    s.entry.buffer === '' ? 0 : parseInt(s.entry.buffer, 10)
-  if (Number.isNaN(sec)) return s
-
   return {
     ...s,
     entry: {
       ...s.entry,
-      buffer: '',
-      seconds: Math.min(MAX_SECONDS, sec),
-      frameBuffer: '',
+      phase: 'frame',
       locked: false,
       lockedParts: null,
     },
   }
 }
 
+/** K: switch to frame entry (same unit gate as S under seconds-first). */
 export function pressK(state: CalcState): CalcState {
-  const s = prepareForNewEntry(state)
-  if (s.entry.locked) return s
-  // Confirm current magnitude as frames/seconds display (explicit K).
-  const parts = entryToParts(s.entry)
-  return { ...s, entry: lockParts(parts) }
+  let s = prepareForNewEntry(state)
+  s = unlockIfNeeded(s)
+  return {
+    ...s,
+    entry: {
+      ...s.entry,
+      phase: 'frame',
+      locked: false,
+      lockedParts: null,
+    },
+  }
 }
 
 /**
- * Shortcuts inject their decimal digits into the frame slots
- * (same as typing those digits), preserving seconds after S.
+ * Shortcuts set the frame field (6 / 12 / 18), keeping seconds digits.
  */
 export function pressShortcut(
   state: CalcState,
@@ -241,14 +188,16 @@ export function pressShortcut(
 ): CalcState {
   let s = prepareForNewEntry(state)
   s = unlockIfNeeded(s)
-  const digits = String(frames)
-  let entry = s.entry
-  for (const d of digits) {
-    const next = appendFrameDigit(entry, d)
-    if (!next) break
-    entry = next
+  return {
+    ...s,
+    entry: {
+      ...s.entry,
+      frameDigits: String(frames),
+      phase: 'frame',
+      locked: false,
+      lockedParts: null,
+    },
   }
-  return { ...s, entry }
 }
 
 export function pressBackspace(state: CalcState): CalcState {
@@ -262,20 +211,18 @@ export function pressBackspace(state: CalcState): CalcState {
     return { ...state, entry: emptyEntry(entry.negative) }
   }
 
-  if (entry.seconds !== null) {
-    if (entry.frameBuffer.length > 0) {
-      entry.frameBuffer = entry.frameBuffer.slice(0, -1)
+  if (entry.phase === 'frame') {
+    if (entry.frameDigits.length > 0) {
+      entry.frameDigits = entry.frameDigits.slice(0, -1)
       return { ...state, entry }
     }
-    // Undo S: restore seconds digits into buffer.
-    entry.buffer = entry.seconds === 0 ? '' : String(entry.seconds)
-    entry.seconds = null
-    entry.frameBuffer = ''
+    // Leave frame phase back to seconds editing.
+    entry.phase = 'sec'
     return { ...state, entry }
   }
 
-  if (entry.buffer.length > 0) {
-    entry.buffer = entry.buffer.slice(0, -1)
+  if (entry.secDigits.length > 0) {
+    entry.secDigits = entry.secDigits.slice(0, -1)
     return { ...state, entry }
   }
 
@@ -301,14 +248,9 @@ export function pressAllClear(_state: CalcState): CalcState {
 
 function applyPending(acc: number, op: Op | null, value: number): number {
   if (op === '-') return clampTotalFrames(acc - value)
-  // '+' or null with a value to fold in → add
   return clampTotalFrames(acc + value)
 }
 
-/**
- * Confirm current entry into the running total using pendingOp,
- * then set a new pending operator (for + / -).
- */
 function confirmWithOp(state: CalcState, nextOp: Op): CalcState {
   if (state.justEvaluated) {
     return {
@@ -321,9 +263,7 @@ function confirmWithOp(state: CalcState, nextOp: Op): CalcState {
   }
 
   let acc = state.accumulator
-  const hadEntry = hasEntryInput(state.entry)
-
-  if (hadEntry) {
+  if (hasEntryInput(state.entry)) {
     const value = entryToTotalFrames(state.entry)
     if (state.pendingOp !== null || state.showSub) {
       acc = applyPending(acc, state.pendingOp ?? '+', value)
@@ -346,8 +286,8 @@ export function pressPlus(state: CalcState): CalcState {
 }
 
 /**
- * - with no existing value → unary minus (negative number input)
- * - with an existing value (entry, sub, or just-evaluated result) → subtraction
+ * - with no existing value → unary minus
+ * - with an existing value → subtraction
  */
 export function pressMinus(state: CalcState): CalcState {
   if (state.justEvaluated) {
@@ -388,8 +328,6 @@ export function pressEquals(state: CalcState): CalcState {
     } else {
       acc = value
     }
-  } else if (state.pendingOp !== null && state.showSub) {
-    // No new entry — keep accumulator as result.
   }
 
   return {
@@ -405,7 +343,6 @@ export function getMainParts(state: CalcState): TimeParts {
   if (state.justEvaluated) {
     return fromTotalFrames(state.accumulator)
   }
-  // Show unary-minus zero while waiting for digits.
   return entryToParts(state.entry)
 }
 
@@ -413,3 +350,6 @@ export function getSubParts(state: CalcState): TimeParts | null {
   if (!state.showSub) return null
   return fromTotalFrames(state.accumulator)
 }
+
+// Re-export zero for tests that may reference display of empty entry
+export { ZERO_PARTS }

@@ -101,18 +101,18 @@ const KEYS: KeyDef[] = [
   { id: '4', label: '4', className: 'key num', action: { type: 'digit', digit: '4' } },
   { id: '5', label: '5', className: 'key num', action: { type: 'digit', digit: '5' } },
   { id: '6', label: '6', className: 'key num', action: { type: 'digit', digit: '6' } },
-  { id: '18k', label: '18k', className: 'key shortcut', action: { type: 'shortcut', frames: 18 } },
+  { id: '18k', label: '18K', className: 'key shortcut', action: { type: 'shortcut', frames: 18 } },
   { id: 'ac', label: 'AC', className: 'key ac', action: { type: 'ac' } },
 
   { id: '1', label: '1', className: 'key num', action: { type: 'digit', digit: '1' } },
   { id: '2', label: '2', className: 'key num', action: { type: 'digit', digit: '2' } },
   { id: '3', label: '3', className: 'key num', action: { type: 'digit', digit: '3' } },
-  { id: '12k', label: '12k', className: 'key shortcut', action: { type: 'shortcut', frames: 12 } },
+  { id: '12k', label: '12K', className: 'key shortcut', action: { type: 'shortcut', frames: 12 } },
   { id: 'c', label: 'C', className: 'key clear', action: { type: 'c' } },
 
   { id: '0', label: '0', className: 'key num', action: { type: 'digit', digit: '0' } },
   { id: 'plus', label: '＋', className: 'key op plus', action: { type: 'plus' }, span: 'plus' },
-  { id: '6k', label: '6k', className: 'key shortcut', action: { type: 'shortcut', frames: 6 } },
+  { id: '6k', label: '6K', className: 'key shortcut', action: { type: 'shortcut', frames: 6 } },
   { id: 'bs', label: '▶', className: 'key clear', action: { type: 'backspace' } },
 
   { id: 'minus', label: '−', className: 'key op', action: { type: 'minus' } },
