@@ -62,12 +62,14 @@ function Display({ state }: { state: CalcState }) {
   return (
     <div className="display" aria-live="polite">
       <div className="display-main">
-        <span className="sign">{main.sign}</span>
+        <span className="sign">{main.sign || '\u00a0'}</span>
         <span className="seconds">
           <span className="num">{main.seconds}</span>
           <span className="unit">秒</span>
         </span>
-        <span className="plus">＋</span>
+        <span className="plus" aria-hidden="true">
+          ＋
+        </span>
         <span className="frames">
           <span className="num">{main.frames}</span>
           <span className="unit">K</span>

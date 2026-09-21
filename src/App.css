@@ -81,18 +81,19 @@ body {
 
 .display-main {
   display: grid;
-  grid-template-columns: auto minmax(0, 1.15fr) auto minmax(0, 0.85fr);
+  grid-template-columns: 0.7em auto auto auto;
   align-items: baseline;
-  column-gap: 0.12em;
+  justify-content: center;
+  column-gap: 0.08em;
   font-weight: 700;
   letter-spacing: 0.02em;
   line-height: 1.05;
   width: 100%;
+  white-space: pre;
 }
 
 .display-main .sign {
   font-size: clamp(1.4rem, 7vw, 2.2rem);
-  width: 0.55em;
   text-align: right;
   color: var(--text);
 }
@@ -101,22 +102,13 @@ body {
 .display-main .frames {
   display: inline-flex;
   align-items: baseline;
-  justify-content: flex-end;
-  gap: 0.08em;
-  min-width: 0;
-}
-
-.display-main .seconds {
-  justify-content: flex-end;
-}
-
-.display-main .frames {
-  justify-content: flex-start;
+  gap: 0.06em;
 }
 
 .display-main .num {
-  font-size: clamp(2rem, 11vw, 3.4rem);
+  font-size: clamp(1.85rem, 9.5vw, 3.1rem);
   font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
 }
 
 .display-main .unit {
@@ -127,8 +119,7 @@ body {
 .display-main .plus {
   font-size: clamp(1.6rem, 8vw, 2.6rem);
   text-align: center;
-  justify-self: center;
-  width: 1.1em;
+  width: 1.05em;
 }
 
 .display-sub {
