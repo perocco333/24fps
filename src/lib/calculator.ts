@@ -13,9 +13,11 @@ export type Op = '+' | '-'
 /**
  * Seconds-first entry:
  * - Digit keys append to the seconds field (123 → 123秒＋00K).
- * - S / K switch to frame entry (further digits fill K, 0–23).
+ * - S switches to frame entry (further digits fill K, 0–23).
+ * - K converts current seconds digits into frames (reject if > 23).
  * - Shortcuts (6K/12K/18K) set the frame field, keeping current seconds.
  * - + / - / = confirm the current entry as-is (seconds + frames).
+ * - C clears the entry and forces main to show 0 (sub / total kept).
  */
 export type EntryState = {
   secDigits: string
@@ -33,6 +35,8 @@ export type CalcState = {
   showSub: boolean
   justEvaluated: boolean
   pendingOp: Op | null
+  /** After C: show 0 on main until the next input starts. */
+  entryCleared: boolean
 }
 
 export function emptyEntry(negative = false): EntryState {
@@ -53,6 +57,7 @@ export function initialState(): CalcState {
     showSub: false,
     justEvaluated: false,
     pendingOp: null,
+    entryCleared: false,
   }
 }
 
@@ -118,6 +123,7 @@ function prepareForNewEntry(state: CalcState): CalcState {
     showSub: false,
     justEvaluated: false,
     pendingOp: null,
+    entryCleared: false,
   }
 }
 
@@ -126,9 +132,14 @@ function unlockIfNeeded(state: CalcState): CalcState {
   return { ...state, entry: emptyEntry(state.entry.negative) }
 }
 
+function clearEntryCleared(state: CalcState): CalcState {
+  return state.entryCleared ? { ...state, entryCleared: false } : state
+}
+
 export function pressDigit(state: CalcState, digit: string): CalcState {
   let s = prepareForNewEntry(state)
   s = unlockIfNeeded(s)
+  s = clearEntryCleared(s)
   const entry = { ...s.entry }
 
   if (entry.phase === 'sec') {
@@ -153,6 +164,7 @@ export function pressDigit(state: CalcState, digit: string): CalcState {
 export function pressS(state: CalcState): CalcState {
   let s = prepareForNewEntry(state)
   s = unlockIfNeeded(s)
+  s = clearEntryCleared(s)
   return {
     ...s,
     entry: {
@@ -164,14 +176,40 @@ export function pressS(state: CalcState): CalcState {
   }
 }
 
-/** K: switch to frame entry (same unit gate as S under seconds-first). */
+/**
+ * K: convert current seconds digits into frames.
+ * Reject (keep seconds display) if the value would be > 23.
+ * With no seconds digits, just switch to frame entry mode.
+ */
 export function pressK(state: CalcState): CalcState {
   let s = prepareForNewEntry(state)
   s = unlockIfNeeded(s)
+  s = clearEntryCleared(s)
+
+  const entry = s.entry
+  if (entry.phase === 'sec' && entry.secDigits !== '') {
+    const value = parseInt(entry.secDigits, 10)
+    if (Number.isNaN(value) || value > FPS - 1) {
+      // Reject: keep seconds display unchanged.
+      return s
+    }
+    return {
+      ...s,
+      entry: {
+        ...entry,
+        secDigits: '',
+        frameDigits: String(value),
+        phase: 'frame',
+        locked: false,
+        lockedParts: null,
+      },
+    }
+  }
+
   return {
     ...s,
     entry: {
-      ...s.entry,
+      ...entry,
       phase: 'frame',
       locked: false,
       lockedParts: null,
@@ -188,6 +226,7 @@ export function pressShortcut(
 ): CalcState {
   let s = prepareForNewEntry(state)
   s = unlockIfNeeded(s)
+  s = clearEntryCleared(s)
   return {
     ...s,
     entry: {
@@ -239,6 +278,7 @@ export function pressClearEntry(state: CalcState): CalcState {
     ...state,
     entry: emptyEntry(),
     justEvaluated: false,
+    entryCleared: true,
   }
 }
 
@@ -259,6 +299,7 @@ function confirmWithOp(state: CalcState, nextOp: Op): CalcState {
       showSub: true,
       justEvaluated: false,
       pendingOp: nextOp,
+      entryCleared: false,
     }
   }
 
@@ -278,6 +319,7 @@ function confirmWithOp(state: CalcState, nextOp: Op): CalcState {
     showSub: true,
     justEvaluated: false,
     pendingOp: nextOp,
+    entryCleared: false,
   }
 }
 
@@ -297,6 +339,7 @@ export function pressMinus(state: CalcState): CalcState {
       showSub: true,
       justEvaluated: false,
       pendingOp: '-',
+      entryCleared: false,
     }
   }
 
@@ -310,6 +353,7 @@ export function pressMinus(state: CalcState): CalcState {
       ...state,
       entry: emptyEntry(true),
       justEvaluated: false,
+      entryCleared: false,
     }
   }
 
@@ -336,12 +380,17 @@ export function pressEquals(state: CalcState): CalcState {
     showSub: false,
     justEvaluated: true,
     pendingOp: null,
+    entryCleared: false,
   }
 }
 
 export function getMainParts(state: CalcState): TimeParts {
   if (state.justEvaluated) {
     return fromTotalFrames(state.accumulator)
+  }
+  // After C, show 0 so the cleared input is obvious (sub still has total).
+  if (state.entryCleared) {
+    return ZERO_PARTS
   }
   // After +/- keep showing the running total until the next input starts.
   if (state.showSub && !hasEntryInput(state.entry)) {
