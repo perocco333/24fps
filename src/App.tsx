@@ -95,7 +95,7 @@ const KEYS: KeyDef[] = [
   { id: '7', label: '7', className: 'key num', action: { type: 'digit', digit: '7' } },
   { id: '8', label: '8', className: 'key num', action: { type: 'digit', digit: '8' } },
   { id: '9', label: '9', className: 'key num', action: { type: 'digit', digit: '9' } },
-  { id: 'bs', label: '▶', className: 'key clear', action: { type: 'backspace' } },
+  { id: 'bs', label: '▶', className: 'key backspace', action: { type: 'backspace' } },
   { id: 'ac', label: 'AC', className: 'key ac', action: { type: 'ac' } },
 
   { id: '4', label: '4', className: 'key num', action: { type: 'digit', digit: '4' } },

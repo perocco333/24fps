@@ -12,11 +12,12 @@
   --display: #ffffff;
   --text: #2a2a2a;
   --num: rgb(229, 237, 245);
-  --unit: #f0b07a;
-  --shortcut: #f3b6c8;
-  --ac: #e53935;
-  --clear: #43a047;
-  --op: #7e57c2;
+  --unit: rgb(240, 176, 122);
+  --shortcut: rgb(225, 170, 173);
+  --backspace: rgb(89, 103, 129);
+  --ac: rgb(171, 28, 24);
+  --clear: rgb(117, 162, 119);
+  --op: rgb(79, 82, 174);
   --shadow: rgba(0, 0, 0, 0.18);
   --radius: 14px;
   --font: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'Noto Sans JP',
@@ -211,6 +212,11 @@ body {
 
 .key.ac {
   background: var(--ac);
+  color: #fff;
+}
+
+.key.backspace {
+  background: var(--backspace);
   color: #fff;
 }
 
