@@ -3,8 +3,10 @@ import {
   getSubParts,
   initialState,
   pressAllClear,
+  pressClearEntry,
   pressDigit,
   pressEquals,
+  pressK,
   pressMinus,
   pressPlus,
   pressS,
@@ -30,7 +32,21 @@ s = pressDigit(s, '1')
 s = pressDigit(s, '2')
 assert(mainLabel(s) === '12秒＋00K', '12 as seconds')
 
+// 12 → K → 0秒＋12K
+s = pressK(s)
+assert(mainLabel(s) === '0秒＋12K', '12 K converts to frames')
+
+// 24 → K rejected
+s = initialState()
+s = pressDigit(s, '2')
+s = pressDigit(s, '4')
+s = pressK(s)
+assert(mainLabel(s) === '24秒＋00K', '24 K rejected')
+
 // 123 stays 123 seconds (no push to frames)
+s = initialState()
+s = pressDigit(s, '1')
+s = pressDigit(s, '2')
 s = pressDigit(s, '3')
 assert(mainLabel(s) === '123秒＋00K', '123 as seconds')
 
@@ -53,8 +69,15 @@ s = pressDigit(s, '7')
 s = pressPlus(s)
 assert(formatSub(getSubParts(s)!) === '7+0', '7 + confirms seconds')
 assert(mainLabel(s) === '7秒＋00K', 'main holds 7 after +')
+
+// C mid-calc: main shows 0, sub keeps total
 s = pressDigit(s, '3')
-assert(mainLabel(s) === '3秒＋00K', 'main updates on next digit')
+assert(mainLabel(s) === '3秒＋00K', 'typing 3')
+s = pressClearEntry(s)
+assert(mainLabel(s) === '0秒＋00K', 'C shows zero on main')
+assert(formatSub(getSubParts(s)!) === '7+0', 'C keeps sub total')
+s = pressDigit(s, '5')
+assert(mainLabel(s) === '5秒＋00K', 'digit after C')
 
 // 10 S 12 → 10秒＋12K
 s = initialState()
