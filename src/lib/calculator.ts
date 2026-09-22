@@ -343,6 +343,10 @@ export function getMainParts(state: CalcState): TimeParts {
   if (state.justEvaluated) {
     return fromTotalFrames(state.accumulator)
   }
+  // After +/- keep showing the running total until the next input starts.
+  if (state.showSub && !hasEntryInput(state.entry)) {
+    return fromTotalFrames(state.accumulator)
+  }
   return entryToParts(state.entry)
 }
 

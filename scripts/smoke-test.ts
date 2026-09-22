@@ -47,11 +47,14 @@ s = pressDigit(s, '0')
 s = pressShortcut(s, 6)
 assert(mainLabel(s) === '10秒＋06K', '10 then 6K')
 
-// 7 → + confirms as 7 seconds
+// 7 → + confirms as 7 seconds; main keeps showing 7 until next input
 s = initialState()
 s = pressDigit(s, '7')
 s = pressPlus(s)
 assert(formatSub(getSubParts(s)!) === '7+0', '7 + confirms seconds')
+assert(mainLabel(s) === '7秒＋00K', 'main holds 7 after +')
+s = pressDigit(s, '3')
+assert(mainLabel(s) === '3秒＋00K', 'main updates on next digit')
 
 // 10 S 12 → 10秒＋12K
 s = initialState()

@@ -58,6 +58,9 @@ body {
   /* Fixed 2:3 portrait; black letterbox fills the rest */
   --phone-w: 2;
   --phone-h: 3;
+  /* Fonts scale with the phone body (not the viewport) */
+  container-type: size;
+  container-name: phone;
   width: min(100vw, calc(100vh * var(--phone-w) / var(--phone-h)));
   height: min(100vh, calc(100vw * var(--phone-h) / var(--phone-w)));
   aspect-ratio: var(--phone-w) / var(--phone-h);
@@ -97,7 +100,7 @@ body {
 }
 
 .display-main .sign {
-  font-size: clamp(2.4rem, 12vw, 4rem);
+  font-size: 8cqh;
   font-weight: 700;
   text-align: right;
   color: var(--text);
@@ -123,19 +126,19 @@ body {
 }
 
 .display-main .num {
-  font-size: clamp(2.4rem, 12vw, 4rem);
+  font-size: 8cqh;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
 }
 
 .display-main .unit {
-  font-size: clamp(1.25rem, 5.5vw, 1.85rem);
+  font-size: 3.6cqh;
   font-weight: 700;
 }
 
 .display-main .plus {
-  font-size: clamp(2.1rem, 10vw, 3.4rem);
+  font-size: 6.5cqh;
   font-weight: 700;
   text-align: center;
   width: 1.05em;
@@ -143,9 +146,9 @@ body {
 }
 
 .display-sub {
-  margin-top: 10px;
+  margin-top: 1.2cqh;
   text-align: right;
-  font-size: clamp(1.35rem, 5.5vw, 1.85rem);
+  font-size: 3.5cqh;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: #444;
@@ -170,8 +173,7 @@ body {
   border-radius: var(--radius);
   font-family: inherit;
   font-weight: 700;
-  /* ~1.5× previous key label size */
-  font-size: clamp(1.7rem, 7.8vw, 2.35rem);
+  font-size: 5.2cqh;
   color: var(--text);
   cursor: pointer;
   box-shadow:
@@ -204,7 +206,7 @@ body {
 
 .key.shortcut {
   background: var(--shortcut);
-  font-size: clamp(1.45rem, 6.4vw, 1.95rem);
+  font-size: 4.2cqh;
 }
 
 .key.ac {
@@ -220,13 +222,13 @@ body {
 .key.op {
   background: var(--op);
   color: #fff;
-  font-size: clamp(2.2rem, 9.5vw, 3rem);
+  font-size: 6.5cqh;
 }
 
 .key.span-plus {
   grid-column: 2 / span 2;
   grid-row: 4 / span 2;
-  font-size: clamp(3.2rem, 14vw, 4.6rem);
+  font-size: 10cqh;
 }
 
 .key.span-eq {
