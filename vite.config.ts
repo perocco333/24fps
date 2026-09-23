@@ -3,7 +3,7 @@ import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  base: '/alpha/24fps/',
+  base: '/24fps/',
   plugins: [
     react(),
     VitePWA({
@@ -22,7 +22,7 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         lang: 'ja',
-        start_url: '/alpha/24fps/',
+        start_url: '/24fps/',
         icons: [
           {
             src: 'pwa-192.png',
@@ -44,7 +44,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,ttf}'],
-        navigateFallback: '/alpha/24fps/index.html',
+        navigateFallback: '/24fps/index.html',
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
     }),
